@@ -1,0 +1,2354 @@
+package com.kukosin.app.ui
+
+import android.Manifest
+import android.content.ComponentName
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.NavigateNext
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Headphones
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Usb
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.Player
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import coil.compose.AsyncImage
+import com.kukosin.app.data.AlbumGroup
+import com.kukosin.app.data.ArtistGroup
+import com.kukosin.app.data.FolderNode
+import com.kukosin.app.data.Track
+import com.kukosin.app.data.formatTime
+import com.kukosin.app.data.ytm.YtmTrack
+import com.kukosin.app.playback.AudioRoute
+import com.kukosin.app.playback.OutputDevice
+import com.kukosin.app.playback.PlaybackService
+import com.kukosin.app.playback.UsbDacManager
+import com.kukosin.app.ui.theme.Cream
+import com.kukosin.app.ui.theme.CreamMuted
+import com.kukosin.app.ui.theme.Gold
+import com.kukosin.app.ui.theme.Ink
+import com.kukosin.app.ui.theme.InkElevated
+import com.kukosin.app.ui.theme.InkSoft
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+
+@Composable
+fun PlayerApp(viewModel: LibraryViewModel = viewModel()) {
+    val context = LocalContext.current
+    val library by viewModel.uiState.collectAsStateWithLifecycle()
+    var hasPermission by remember { mutableStateOf(hasAudioPermission(context)) }
+    var controller by remember { mutableStateOf<MediaController?>(null) }
+    var showNowPlaying by remember { mutableStateOf(false) }
+    var showSignalPath by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { grants ->
+        hasPermission = grants.entries.any { it.key != Manifest.permission.POST_NOTIFICATIONS && it.value }
+        if (hasPermission) viewModel.refresh()
+    }
+
+    LaunchedEffect(hasPermission) {
+        if (hasPermission && !library.hasScanned && !library.isScanning) {
+            viewModel.refresh()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
+        val future = MediaController.Builder(context, token).buildAsync()
+        val executor = ContextCompat.getMainExecutor(context)
+        future.addListener(
+            {
+                if (future.isDone && !future.isCancelled) {
+                    runCatching { controller = future.get() }
+                }
+            },
+            executor,
+        )
+        onDispose {
+            MediaController.releaseFuture(future)
+            controller = null
+        }
+    }
+
+    val playback = rememberPlaybackState(controller, library.tracks)
+    val output by AudioRoute.current.collectAsStateWithLifecycle()
+    val analysis by viewModel.analysisState.collectAsStateWithLifecycle()
+    val audioConfig by viewModel.audioConfig.collectAsStateWithLifecycle()
+    var showSettings by remember { mutableStateOf(false) }
+
+    LaunchedEffect(playback.current?.uri) {
+        playback.current?.let { currentTrack ->
+            viewModel.prepareMetadata(currentTrack)
+            if (audioConfig.autoAnalyze) {
+                viewModel.analyzeSpectral(currentTrack)
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(Ink, InkElevated, Ink),
+                ),
+            ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+        ) {
+            Header(
+                trackCount = library.tracks.size,
+                scanning = library.isScanning,
+                outputName = output.name,
+                outputKind = output.typeLabel,
+                isDac = output.isDac,
+                isBitPerfect = output.isBitPerfectSupported,
+                hasUsbPerm = output.hasUsbPermission,
+                error = library.error,
+                onRequestUsb = { UsbDacManager.requestPermission(context) },
+                onOpenSignalPath = { showSignalPath = true },
+                onOpenSettings = { showSettings = true },
+            )
+
+            LibraryTabs(
+                activeTab = library.activeTab,
+                onTabSelected = viewModel::setTab,
+            )
+
+            if (library.activeTab != LibraryTab.YOUTUBE_MUSIC && hasPermission) {
+                SearchField(
+                    query = library.query,
+                    onQueryChange = viewModel::onQueryChange,
+                )
+            }
+
+            val bottomPadding = if (playback.current != null) 108 else 24
+
+            when (library.activeTab) {
+                LibraryTab.YOUTUBE_MUSIC -> YtmView(
+                    ytmTracks = library.ytmTracks,
+                    ytmQuery = library.ytmQuery,
+                    isSearching = library.isYtmSearching,
+                    onQueryChange = viewModel::onYtmQueryChange,
+                    onSearch = { viewModel.searchYtm() },
+                    onTrackClick = { ytmTrack ->
+                        controller?.apply {
+                            setMediaItem(ytmTrack.toMediaItem())
+                            prepare()
+                            play()
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    bottomPadding = bottomPadding,
+                )
+                else -> {
+                    when {
+                        !hasPermission -> PermissionCard(
+                            onGrant = { permissionLauncher.launch(audioPermissions()) },
+                        )
+                        library.isScanning && library.tracks.isEmpty() -> LoadingLibrary()
+                        library.hasScanned && library.tracks.isEmpty() -> EmptyLibrary(hasQuery = false)
+                        else -> {
+                            when (library.activeTab) {
+                                LibraryTab.CANCIONES -> TrackList(
+                                    tracks = library.filteredTracks,
+                                    currentUri = playback.current?.uri,
+                                    isPlaying = playback.isPlaying,
+                                    onTrackClick = { index ->
+                                        playTrackList(controller, library.filteredTracks, index)
+                                    },
+                                    onInspectClick = viewModel::setInspectTrack,
+                                    modifier = Modifier.weight(1f),
+                                    bottomPadding = bottomPadding,
+                                )
+                                LibraryTab.ALBUMES -> AlbumView(
+                                    albums = library.filteredAlbums,
+                                    onAlbumClick = viewModel::selectAlbum,
+                                    modifier = Modifier.weight(1f),
+                                    bottomPadding = bottomPadding,
+                                )
+                                LibraryTab.ARTISTAS -> ArtistView(
+                                    artists = library.filteredArtists,
+                                    onArtistClick = viewModel::selectArtist,
+                                    modifier = Modifier.weight(1f),
+                                    bottomPadding = bottomPadding,
+                                )
+                                LibraryTab.CARPETAS -> FolderBrowserView(
+                                    currentFolder = library.currentFolder,
+                                    folderPath = library.folderPath,
+                                    currentUri = playback.current?.uri,
+                                    isPlaying = playback.isPlaying,
+                                    onFolderClick = viewModel::navigateToFolder,
+                                    onNavigateUp = { viewModel.navigateUpFolder() },
+                                    onTrackClick = { tracks, index ->
+                                        playTrackList(controller, tracks, index)
+                                    },
+                                    onInspectClick = viewModel::setInspectTrack,
+                                    modifier = Modifier.weight(1f),
+                                    bottomPadding = bottomPadding,
+                                )
+                                else -> {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        playback.current?.let { current ->
+            MiniPlayer(
+                track = current,
+                isPlaying = playback.isPlaying,
+                progress = playback.progress,
+                isDac = output.isDac,
+                onToggle = { controller?.let { if (it.isPlaying) it.pause() else it.play() } },
+                onNext = { controller?.seekToNext() },
+                onOpen = { showNowPlaying = true },
+                onOpenSignalPath = { showSignalPath = true },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+    }
+
+    if (showNowPlaying && playback.current != null && controller != null) {
+        NowPlayingSheet(
+            track = playback.current!!,
+            controller = controller!!,
+            isPlaying = playback.isPlaying,
+            output = output,
+            analysis = analysis,
+            onDismiss = { showNowPlaying = false },
+            onOpenSignalPath = { showSignalPath = true },
+            onAnalyzeClick = { playback.current?.let(viewModel::analyzeSpectral) },
+        )
+    }
+
+    if (showSettings) {
+        FullScreenSettingsScreen(
+            output = output,
+            autoAnalyze = audioConfig.autoAnalyze,
+            onToggleAutoAnalyze = viewModel::toggleAutoAnalyze,
+            audioDriver = audioConfig.driver,
+            onSelectAudioDriver = viewModel::setAudioDriver,
+            targetSampleRate = audioConfig.targetSampleRate,
+            onSelectTargetSampleRate = viewModel::setTargetSampleRate,
+            targetPcmFormat = audioConfig.targetPcmFormat,
+            onSelectTargetPcmFormat = viewModel::setTargetPcmFormat,
+            bitPerfectEnabled = audioConfig.bitPerfectEnabled,
+            onToggleBitPerfect = viewModel::toggleBitPerfect,
+            onRescan = {
+                if (hasPermission) viewModel.refresh() else permissionLauncher.launch(audioPermissions())
+            },
+            onDismiss = { showSettings = false },
+        )
+    }
+
+    if (showSignalPath) {
+        AudioSignalPathSheet(
+            track = playback.current ?: library.tracks.firstOrNull(),
+            output = output,
+            onDismiss = { showSignalPath = false },
+        )
+    }
+
+    library.selectedAlbum?.let { album ->
+        AlbumDetailSheet(
+            album = album,
+            currentUri = playback.current?.uri,
+            isPlaying = playback.isPlaying,
+            onTrackClick = { index -> playTrackList(controller, album.tracks, index) },
+            onInspectClick = viewModel::setInspectTrack,
+            onDismiss = { viewModel.selectAlbum(null) },
+        )
+    }
+
+    library.selectedArtist?.let { artist ->
+        ArtistDetailSheet(
+            artist = artist,
+            currentUri = playback.current?.uri,
+            isPlaying = playback.isPlaying,
+            onTrackClick = { index -> playTrackList(controller, artist.tracks, index) },
+            onInspectClick = viewModel::setInspectTrack,
+            onDismiss = { viewModel.selectArtist(null) },
+        )
+    }
+
+    library.inspectTrack?.let { track ->
+        MetadataInspectorDialog(
+            track = track,
+            output = output,
+            analysis = analysis,
+            onDismiss = { viewModel.setInspectTrack(null) },
+            onOpenSignalPath = { showSignalPath = true },
+            onAnalyzeClick = { viewModel.analyzeSpectral(track) },
+        )
+    }
+}
+
+private fun playTrackList(controller: MediaController?, tracks: List<Track>, index: Int) {
+    if (controller == null || tracks.isEmpty()) return
+    val safeIndex = index.coerceIn(0, tracks.lastIndex)
+    controller.setMediaItems(tracks.map(Track::toMediaItem), safeIndex, 0L)
+    controller.prepare()
+    controller.play()
+}
+
+private data class PlaybackSnapshot(
+    val current: Track?,
+    val isPlaying: Boolean,
+    val progress: Float,
+)
+
+@Composable
+private fun rememberPlaybackState(
+    controller: MediaController?,
+    tracks: List<Track>,
+): PlaybackSnapshot {
+    var mediaId by remember { mutableStateOf<String?>(null) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var progress by remember { mutableFloatStateOf(0f) }
+
+    DisposableEffect(controller) {
+        if (controller == null) {
+            return@DisposableEffect onDispose { }
+        }
+        val listener = object : Player.Listener {
+            override fun onEvents(player: Player, events: Player.Events) {
+                mediaId = player.currentMediaItem?.mediaId
+                isPlaying = player.isPlaying
+            }
+        }
+        controller.addListener(listener)
+        mediaId = controller.currentMediaItem?.mediaId
+        isPlaying = controller.isPlaying
+        onDispose { controller.removeListener(listener) }
+    }
+
+    LaunchedEffect(controller) {
+        val player = controller ?: return@LaunchedEffect
+        while (isActive) {
+            val duration = player.duration.coerceAtLeast(0)
+            progress = if (duration > 0) player.currentPosition.toFloat() / duration else 0f
+            delay(400)
+        }
+    }
+
+    val current = tracks.firstOrNull { it.uri.toString() == mediaId }
+    return PlaybackSnapshot(current, isPlaying, progress)
+}
+
+@Composable
+private fun Header(
+    trackCount: Int,
+    scanning: Boolean,
+    outputName: String,
+    outputKind: String,
+    isDac: Boolean,
+    isBitPerfect: Boolean,
+    hasUsbPerm: Boolean,
+    error: String?,
+    onRequestUsb: () -> Unit,
+    onOpenSignalPath: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "KUKOSIN",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Gold,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (isDac || isBitPerfect) {
+                        Surface(
+                            color = Gold.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha = 0.5f)),
+                            modifier = Modifier.clickable(onClick = onOpenSignalPath),
+                        ) {
+                            Text(
+                                text = "BIT-PERFECT",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Gold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "Biblioteca HiFi",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Cream,
+                )
+                Text(
+                    text = when {
+                        scanning -> "Escaneando metadatos y codecs…"
+                        trackCount == 0 -> "FLAC, WAV, ALAC, DSD, APE, YTM Stream"
+                        else -> "$trackCount pistas locales"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CreamMuted,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onOpenSignalPath)
+                        .padding(vertical = 2.dp),
+                ) {
+                    if (isDac) {
+                        Icon(
+                            imageVector = Icons.Rounded.Usb,
+                            contentDescription = null,
+                            tint = Gold,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = if (isDac) "DAC USB · $outputName (Ver Ruta ↓)" else "$outputKind · $outputName (Ver Ruta ↓)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Gold,
+                    )
+                }
+                if (isDac && !hasUsbPerm) {
+                    TextButton(onClick = onRequestUsb) {
+                        Text("★ Conceder permiso USB Host", color = Gold, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                if (error != null) {
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Gold,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    imageVector = Icons.Rounded.Settings,
+                    contentDescription = "Configuración",
+                    tint = Gold,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LibraryTabs(
+    activeTab: LibraryTab,
+    onTabSelected: (LibraryTab) -> Unit,
+) {
+    val tabs = LibraryTab.entries
+    ScrollableTabRow(
+        selectedTabIndex = activeTab.ordinal,
+        containerColor = Color.Transparent,
+        contentColor = Gold,
+        edgePadding = 16.dp,
+        indicator = { tabPositions ->
+            TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[activeTab.ordinal]),
+                color = Gold,
+            )
+        },
+    ) {
+        tabs.forEach { tab ->
+            val label = when (tab) {
+                LibraryTab.CANCIONES -> "Canciones"
+                LibraryTab.ALBUMES -> "Álbumes"
+                LibraryTab.ARTISTAS -> "Artistas"
+                LibraryTab.CARPETAS -> "Carpetas"
+                LibraryTab.YOUTUBE_MUSIC -> "YouTube Music"
+            }
+            Tab(
+                selected = activeTab == tab,
+                onClick = { onTabSelected(tab) },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (tab == LibraryTab.YOUTUBE_MUSIC) {
+                            Icon(Icons.Rounded.Cloud, contentDescription = null, tint = if (activeTab == tab) Gold else CreamMuted, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (activeTab == tab) Gold else CreamMuted,
+                            fontWeight = if (activeTab == tab) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+        placeholder = { Text("Buscar canción, artista, álbum o formato") },
+        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = CreamMuted) },
+        singleLine = true,
+        shape = RoundedCornerShape(18.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Gold,
+            unfocusedBorderColor = InkSoft,
+            focusedContainerColor = InkSoft,
+            unfocusedContainerColor = InkSoft,
+            focusedTextColor = Cream,
+            unfocusedTextColor = Cream,
+            cursorColor = Gold,
+        ),
+    )
+}
+
+@Composable
+private fun YtmView(
+    ytmTracks: List<YtmTrack>,
+    ytmQuery: String,
+    isSearching: Boolean,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onTrackClick: (YtmTrack) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomPadding: Int,
+) {
+    Column(modifier = modifier) {
+        OutlinedTextField(
+            value = ytmQuery,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            placeholder = { Text("Buscar en YouTube Music Online...") },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = Gold) },
+            trailingIcon = {
+                if (isSearching) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Gold, strokeWidth = 2.dp)
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(18.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Gold,
+                unfocusedBorderColor = InkSoft,
+                focusedContainerColor = InkSoft,
+                unfocusedContainerColor = InkSoft,
+                focusedTextColor = Cream,
+                unfocusedTextColor = Cream,
+                cursorColor = Gold,
+            ),
+        )
+
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomPadding.dp, top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(ytmTracks, key = { it.id }) { track ->
+                YtmTrackRow(track = track, onClick = { onTrackClick(track) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun YtmTrackRow(track: YtmTrack, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(InkSoft)
+            .clickable(onClick = onClick)
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(InkElevated),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.Cloud, contentDescription = null, tint = CreamMuted)
+            if (track.thumbnailUri.isNotBlank()) {
+                AsyncImage(
+                    model = track.thumbnailUri,
+                    contentDescription = track.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                track.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Cream,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "${track.artist} · ${track.album}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = CreamMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Surface(
+                color = Gold.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(4.dp),
+            ) {
+                Text(
+                    track.qualityLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Gold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                )
+            }
+        }
+        IconButton(onClick = onClick) {
+            Icon(Icons.Rounded.PlayArrow, contentDescription = "Reproducir", tint = Gold, modifier = Modifier.size(28.dp))
+        }
+    }
+}
+
+@Composable
+private fun PermissionCard(onGrant: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.MusicNote,
+            contentDescription = null,
+            tint = Gold,
+            modifier = Modifier.size(56.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text("Tu música, sin pérdidas", style = MaterialTheme.typography.titleLarge, color = Cream)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Kukosin lee la biblioteca local, decodifica en software de alta resolución y envía audio bit-perfect al DAC USB o a la salida activa.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = CreamMuted,
+        )
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = onGrant,
+            colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text("Permitir acceso a audio")
+        }
+    }
+}
+
+@Composable
+private fun LoadingLibrary() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = Gold)
+            Spacer(Modifier.height(16.dp))
+            Text("Escaneando la biblioteca…", color = CreamMuted)
+        }
+    }
+}
+
+@Composable
+private fun EmptyLibrary(hasQuery: Boolean) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = if (hasQuery) "Nada coincide con la búsqueda" else "No hay archivos de audio indexados",
+            color = CreamMuted,
+        )
+    }
+}
+
+@Composable
+private fun TrackList(
+    tracks: List<Track>,
+    currentUri: android.net.Uri?,
+    isPlaying: Boolean,
+    onTrackClick: (Int) -> Unit,
+    onInspectClick: (Track) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomPadding: Int,
+) {
+    if (tracks.isEmpty()) {
+        EmptyLibrary(hasQuery = true)
+        return
+    }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomPadding.dp, top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        itemsIndexed(tracks, key = { _, track -> track.uri.toString() }) { index, track ->
+            TrackRow(
+                track = track,
+                selected = track.uri == currentUri,
+                isPlaying = isPlaying && track.uri == currentUri,
+                onClick = { onTrackClick(index) },
+                onInspect = { onInspectClick(track) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TrackRow(
+    track: Track,
+    selected: Boolean,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    onInspect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) InkSoft else Ink.copy(alpha = 0f))
+            .clickable(onClick = onClick)
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Artwork(track, Modifier.size(52.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                track.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (selected) Gold else Cream,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "${track.effectiveArtist} · ${track.album}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = CreamMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    track.qualityLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Gold.copy(alpha = 0.9f),
+                )
+                if (track.isHiRes) {
+                    Spacer(Modifier.width(6.dp))
+                    Surface(
+                        color = Gold.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(4.dp),
+                    ) {
+                        Text(
+                            "Hi-Res",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Gold,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                        )
+                    }
+                }
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (isPlaying) {
+                Icon(Icons.Rounded.GraphicEq, contentDescription = "Reproduciendo", tint = Gold, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(formatTime(track.durationMs), style = MaterialTheme.typography.labelSmall, color = CreamMuted)
+            IconButton(onClick = onInspect) {
+                Icon(Icons.Rounded.Info, contentDescription = "Metadatos", tint = CreamMuted.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlbumView(
+    albums: List<AlbumGroup>,
+    onAlbumClick: (AlbumGroup) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomPadding: Int,
+) {
+    if (albums.isEmpty()) {
+        EmptyLibrary(hasQuery = true)
+        return
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = modifier,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomPadding.dp, top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(albums, key = { it.name + "_" + it.artist }) { album ->
+            AlbumCard(album = album, onClick = { onAlbumClick(album) })
+        }
+    }
+}
+
+@Composable
+private fun AlbumCard(album: AlbumGroup, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(InkSoft)
+            .clickable(onClick = onClick)
+            .padding(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(InkElevated),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.Album, contentDescription = null, tint = CreamMuted, modifier = Modifier.size(48.dp))
+            val artwork = album.artworkUri
+            if (artwork != null) {
+                AsyncImage(
+                    model = artwork,
+                    contentDescription = album.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            if (album.isHiRes) {
+                Surface(
+                    color = Gold,
+                    contentColor = Ink,
+                    shape = RoundedCornerShape(bottomStart = 8.dp),
+                    modifier = Modifier.align(Alignment.TopEnd),
+                ) {
+                    Text(
+                        "Hi-Res",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            album.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Cream,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            album.artist,
+            style = MaterialTheme.typography.bodyMedium,
+            color = CreamMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            "${album.tracks.size} canciones${if (album.year > 0) " · ${album.year}" else ""}",
+            style = MaterialTheme.typography.labelSmall,
+            color = Gold,
+        )
+    }
+}
+
+@Composable
+private fun ArtistView(
+    artists: List<ArtistGroup>,
+    onArtistClick: (ArtistGroup) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomPadding: Int,
+) {
+    if (artists.isEmpty()) {
+        EmptyLibrary(hasQuery = true)
+        return
+    }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomPadding.dp, top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(artists, key = { it.name }) { artist ->
+            ArtistRow(artist = artist, onClick = { onArtistClick(artist) })
+        }
+    }
+}
+
+@Composable
+private fun ArtistRow(artist: ArtistGroup, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(InkSoft)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(InkElevated),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.Person, contentDescription = null, tint = Gold)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(artist.name, style = MaterialTheme.typography.titleMedium, color = Cream, fontWeight = FontWeight.Bold)
+            Text(
+                "${artist.albumCount} álbumes · ${artist.trackCount} canciones",
+                style = MaterialTheme.typography.bodyMedium,
+                color = CreamMuted,
+            )
+        }
+        Icon(Icons.AutoMirrored.Rounded.NavigateNext, contentDescription = null, tint = CreamMuted)
+    }
+}
+
+@Composable
+private fun FolderBrowserView(
+    currentFolder: FolderNode?,
+    folderPath: List<FolderNode>,
+    currentUri: android.net.Uri?,
+    isPlaying: Boolean,
+    onFolderClick: (FolderNode) -> Unit,
+    onNavigateUp: () -> Unit,
+    onTrackClick: (List<Track>, Int) -> Unit,
+    onInspectClick: (Track) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomPadding: Int,
+) {
+    if (currentFolder == null) {
+        EmptyLibrary(hasQuery = false)
+        return
+    }
+
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (folderPath.size > 1) {
+                IconButton(onClick = onNavigateUp) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás", tint = Gold)
+                }
+            } else {
+                Icon(Icons.Rounded.Folder, contentDescription = null, tint = Gold, modifier = Modifier.padding(8.dp))
+            }
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = currentFolder.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = Cream,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomPadding.dp, top = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            items(currentFolder.subfolders, key = { it.path }) { subfolder ->
+                FolderRow(folder = subfolder, onClick = { onFolderClick(subfolder) })
+            }
+
+            itemsIndexed(currentFolder.tracks, key = { _, track -> track.uri.toString() }) { index, track ->
+                TrackRow(
+                    track = track,
+                    selected = track.uri == currentUri,
+                    isPlaying = isPlaying && track.uri == currentUri,
+                    onClick = { onTrackClick(currentFolder.tracks, index) },
+                    onInspect = { onInspectClick(track) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderRow(folder: FolderNode, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(InkSoft)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Folder, contentDescription = null, tint = Gold, modifier = Modifier.size(36.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(folder.name, style = MaterialTheme.typography.titleMedium, color = Cream, fontWeight = FontWeight.Bold)
+            Text(
+                "${folder.totalTracksCount} canciones",
+                style = MaterialTheme.typography.bodyMedium,
+                color = CreamMuted,
+            )
+        }
+        Icon(Icons.AutoMirrored.Rounded.NavigateNext, contentDescription = null, tint = CreamMuted)
+    }
+}
+
+@Composable
+private fun Artwork(track: Track, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(InkSoft),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = CreamMuted)
+        AsyncImage(
+            model = track.artworkUri,
+            contentDescription = track.album,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun MiniPlayer(
+    track: Track,
+    isPlaying: Boolean,
+    progress: Float,
+    isDac: Boolean,
+    onToggle: () -> Unit,
+    onNext: () -> Unit,
+    onOpen: () -> Unit,
+    onOpenSignalPath: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = InkSoft,
+        tonalElevation = 0.dp,
+        shadowElevation = 12.dp,
+    ) {
+        Column {
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth(),
+                color = Gold,
+                trackColor = Ink,
+            )
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = onOpen)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Artwork(track, Modifier.size(48.dp))
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Cream, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        if (isDac) {
+                            Spacer(Modifier.width(6.dp))
+                            Surface(
+                                color = Gold,
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.clickable(onClick = onOpenSignalPath),
+                            ) {
+                                Text("DAC", style = MaterialTheme.typography.labelSmall, color = Ink, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp))
+                            }
+                        }
+                    }
+                    Text("${track.effectiveArtist} · ${track.codecLabel}", maxLines = 1, overflow = TextOverflow.Ellipsis, color = CreamMuted, style = MaterialTheme.typography.bodyMedium)
+                }
+                IconButton(onClick = onToggle) {
+                    Icon(
+                        if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                        tint = Gold,
+                    )
+                }
+                IconButton(onClick = onNext) {
+                    Icon(Icons.Rounded.SkipNext, contentDescription = "Siguiente", tint = Cream)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NowPlayingSheet(
+    track: Track,
+    controller: MediaController,
+    isPlaying: Boolean,
+    output: OutputDevice,
+    analysis: com.kukosin.app.data.analysis.AudioAnalysis?,
+    onDismiss: () -> Unit,
+    onOpenSignalPath: () -> Unit,
+    onAnalyzeClick: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var position by remember { mutableLongStateOf(controller.currentPosition) }
+    var duration by remember { mutableLongStateOf(controller.duration.coerceAtLeast(0)) }
+    var shuffle by remember { mutableStateOf(controller.shuffleModeEnabled) }
+    var repeatMode by remember { mutableStateOf(controller.repeatMode) }
+    var seeking by remember { mutableStateOf(false) }
+    var slider by remember { mutableFloatStateOf(0f) }
+    var page by remember { mutableIntStateOf(0) }
+    var isExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isExpanded = true
+    }
+
+    val artworkSize by animateDpAsState(
+        targetValue = if (isExpanded) (if (isPlaying) 270.dp else 225.dp) else 80.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "appleMusicArtworkExpand",
+    )
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isExpanded) (if (isPlaying) 1f else 0.94f) else 0.5f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "artworkScale",
+    )
+
+    LaunchedEffect(controller) {
+        while (isActive) {
+            if (!seeking) {
+                position = controller.currentPosition
+                duration = controller.duration.coerceAtLeast(0)
+            }
+            shuffle = controller.shuffleModeEnabled
+            repeatMode = controller.repeatMode
+            delay(250)
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Ink,
+        contentColor = Cream,
+        modifier = Modifier.fillMaxHeight(),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Minimizar", tint = CreamMuted, modifier = Modifier.size(32.dp))
+                }
+                ScrollableTabRow(
+                    selectedTabIndex = page,
+                    containerColor = Ink,
+                    contentColor = Gold,
+                    edgePadding = 0.dp,
+                    indicator = { tabPositions ->
+                        if (page < tabPositions.size) {
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[page]),
+                                color = Gold,
+                            )
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    listOf("Reproductor", "Letras", "Análisis").forEachIndexed { index, label ->
+                        Tab(
+                            selected = page == index,
+                            onClick = { page = index },
+                            text = { Text(label, color = if (page == index) Gold else CreamMuted, fontWeight = if (page == index) FontWeight.Bold else FontWeight.Normal) },
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            AnimatedContent(
+                targetState = page,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "pageTransition",
+                modifier = Modifier.weight(1f),
+            ) { targetPage ->
+                when (targetPage) {
+                    1 -> LyricsPanel(
+                        lyrics = analysis?.takeIf { it.uri == track.uri }?.lyrics,
+                        positionMs = position,
+                        onLineClick = { timeMs -> controller.seekTo(timeMs) },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    2 -> AnalysisPanel(
+                        analysis = analysis?.takeIf { it.uri == track.uri },
+                        modifier = Modifier.fillMaxSize(),
+                        onAnalyzeClick = onAnalyzeClick,
+                    )
+                    else -> Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Artwork(
+                            track,
+                            Modifier
+                                .size(artworkSize)
+                                .graphicsLayer(scaleX = artworkScale, scaleY = artworkScale),
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        Text(track.title, style = MaterialTheme.typography.headlineMedium, color = Cream, fontWeight = FontWeight.Bold, maxLines = 2)
+                        Spacer(Modifier.height(4.dp))
+                        Text("${track.effectiveArtist} — ${track.album}", style = MaterialTheme.typography.bodyLarge, color = CreamMuted, maxLines = 1)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(track.qualityLabel, style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                            Surface(
+                                color = InkSoft,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.clickable { page = 1 },
+                            ) {
+                                Text(
+                                    text = if (analysis?.lyrics != null) "♫ Letras" else "♫ Sin letras",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Gold,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                            Surface(
+                                color = InkSoft,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.clickable { page = 2 },
+                            ) {
+                                Text(
+                                    text = "📊 Calidad",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Gold,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha = 0.5f)),
+                            modifier = Modifier.clickable(onClick = onOpenSignalPath),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = if (output.isDac) Icons.Rounded.Usb else Icons.Rounded.GraphicEq,
+                                    contentDescription = null,
+                                    tint = Gold,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    if (output.isDac) "Bit-Perfect hacia ${output.name} (Ver Ruta ↓)" else "Salida · ${output.name} (Ver Ruta ↓)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Gold,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Slider(
+                            value = if (seeking) slider else if (duration > 0) position.toFloat() / duration else 0f,
+                            onValueChange = {
+                                seeking = true
+                                slider = it
+                            },
+                            onValueChangeFinished = {
+                                controller.seekTo((slider * duration).toLong())
+                                seeking = false
+                            },
+                            colors = SliderDefaults.colors(
+                                thumbColor = Gold,
+                                activeTrackColor = Gold,
+                                inactiveTrackColor = InkSoft,
+                            ),
+                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(formatTime(if (seeking) (slider * duration).toLong() else position), color = CreamMuted, style = MaterialTheme.typography.labelSmall)
+                            Text(formatTime(duration), color = CreamMuted, style = MaterialTheme.typography.labelSmall)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            IconButton(onClick = { controller.shuffleModeEnabled = !controller.shuffleModeEnabled }) {
+                                Icon(Icons.Rounded.Shuffle, contentDescription = "Aleatorio", tint = if (shuffle) Gold else CreamMuted)
+                            }
+                            IconButton(onClick = { controller.seekToPrevious() }) {
+                                Icon(Icons.Rounded.SkipPrevious, contentDescription = "Anterior", tint = Cream, modifier = Modifier.size(40.dp))
+                            }
+                            FilledIconButton(
+                                onClick = { if (controller.isPlaying) controller.pause() else controller.play() },
+                                modifier = Modifier.size(72.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = Gold, contentColor = Ink),
+                                shape = CircleShape,
+                            ) {
+                                Icon(
+                                    if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                    contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                                    modifier = Modifier.size(40.dp),
+                                )
+                            }
+                            IconButton(onClick = { controller.seekToNext() }) {
+                                Icon(Icons.Rounded.SkipNext, contentDescription = "Siguiente", tint = Cream, modifier = Modifier.size(40.dp))
+                            }
+                            IconButton(
+                                onClick = {
+                                    controller.repeatMode = when (controller.repeatMode) {
+                                        Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                                        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                                        else -> Player.REPEAT_MODE_OFF
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                                    contentDescription = "Repetir",
+                                    tint = if (repeatMode == Player.REPEAT_MODE_OFF) CreamMuted else Gold,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AudioSignalPathSheet(
+    track: Track?,
+    output: OutputDevice,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Ink,
+        contentColor = Cream,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.GraphicEq,
+                    contentDescription = null,
+                    tint = Gold,
+                    modifier = Modifier.size(28.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(
+                        "Cadena de Señal Audio (Signal Path)",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Gold,
+                    )
+                    Text(
+                        "Tráfico de señal punto a punto desde el archivo hasta el DAC / Salida",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = CreamMuted,
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            val sampleRateStr = if (track != null && track.sampleRate > 0) {
+                if (track.sampleRate >= 1000) "${track.sampleRate / 1000.0} kHz (${track.sampleRate} Hz)" else "${track.sampleRate} Hz"
+            } else "44.1 kHz"
+
+            val bitDepthStr = if (track != null && track.bitDepth > 0) "${track.bitDepth}-bit" else "16-bit"
+            val channelsStr = if (track != null && track.channels > 0) {
+                when (track.channels) {
+                    1 -> "Mono (1.0)"
+                    2 -> "Estéreo (2.0)"
+                    else -> "${track.channels} canales"
+                }
+            } else "Estéreo (2.0)"
+
+            val codecStr = track?.codecLabel ?: "FLAC / Audio"
+            val bitrateStr = if (track != null && track.bitrate > 0) "${track.bitrate / 1000} kbps" else "Variable / Lossless"
+            val decoderName = if (codecStr in listOf("FLAC", "DSD", "APE", "WavPack", "ALAC", "TrueHD", "DTS", "Opus")) {
+                "NextLib Native FFmpeg Decoder"
+            } else {
+                "ExoPlayer Media3 Native Audio Decoder"
+            }
+
+            LazyColumn(
+                modifier = Modifier.height(460.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item {
+                    SignalNodeCard(
+                        stepNumber = "1",
+                        title = "Archivo de Origen (Source)",
+                        subtitle = "${track?.title ?: "Audio Local"} · $codecStr",
+                        icon = Icons.Rounded.MusicNote,
+                        details = listOf(
+                            "Formato / Codec" to codecStr,
+                            "Frecuencia Muestreo" to sampleRateStr,
+                            "Profundidad Bits" to bitDepthStr,
+                            "Canales" to channelsStr,
+                            "Tasa de Bits" to bitrateStr,
+                            "Ruta Archivo" to (track?.filePath?.ifBlank { track.fileName } ?: "Local Audio"),
+                        ),
+                    )
+                }
+                item { SignalConnectorArrow("Decodificación en Software") }
+                item {
+                    SignalNodeCard(
+                        stepNumber = "2",
+                        title = "Decodificador de Audio (Decoder)",
+                        subtitle = decoderName,
+                        icon = Icons.Rounded.GraphicEq,
+                        details = listOf(
+                            "Motor Decodificador" to decoderName,
+                            "Entrada Stream" to "$codecStr ($bitDepthStr / $sampleRateStr)",
+                            "Salida PCM" to "32-bit IEEE PCM Float ($sampleRateStr)",
+                            "Estado Motor" to "Decodificación Nativa Sin Pérdidas",
+                        ),
+                    )
+                }
+                item { SignalConnectorArrow("Procesamiento DSP & Resampler") }
+                item {
+                    SignalNodeCard(
+                        stepNumber = "3",
+                        title = "Re-Muestreo & DSP",
+                        subtitle = if (output.isDac || output.isBitPerfectSupported) "Bypassed (Bit-Perfect Direct)" else "Frecuencia Nativa Mantenedora",
+                        icon = Icons.Rounded.Settings,
+                        details = listOf(
+                            "Estado Resampler" to if (output.isDac || output.isBitPerfectSupported) "OMITIDO / BYPASSED (Bit-Perfect Direct)" else "Inactivo (Sin Re-muestreo)",
+                            "Procesadores DSP" to "Ninguno (Señal Pura Bit a Bit)",
+                            "Velocidad / Pitch" to "Desactivado (1.0x sin interpolación)",
+                        ),
+                    )
+                }
+                item { SignalConnectorArrow("Transferencia AudioTrack / System Sink") }
+                item {
+                    SignalNodeCard(
+                        stepNumber = "4",
+                        title = "AudioTrack & Mezclador Sistema",
+                        subtitle = "PCM_FLOAT / Low Latency Direct",
+                        icon = Icons.Rounded.Memory,
+                        details = listOf(
+                            "Formato AudioTrack" to "ENCODING_PCM_FLOAT (32-bit Flotante)",
+                            "Atributos Audio" to "USAGE_MEDIA · CONTENT_TYPE_MUSIC",
+                            "Modo Mezclador" to if (output.isDac) "Direct Bit-Perfect Passthrough" else "AudioTrack Direct Sync",
+                            "Latencia" to "Baja Latencia (Low-Latency Direct)",
+                        ),
+                    )
+                }
+                item { SignalConnectorArrow("Dispositivo de Salida Final (Hardware)") }
+                item {
+                    SignalNodeCard(
+                        stepNumber = "5",
+                        title = "Dispositivo de Salida (Output Hardware)",
+                        subtitle = "${output.typeLabel} (${output.name})",
+                        icon = if (output.isDac) Icons.Rounded.Usb else Icons.Rounded.Headphones,
+                        isHighlight = output.isDac || output.isBitPerfectSupported,
+                        details = listOf(
+                            "Dispositivo Salida" to output.name,
+                            "Tipo Conexión" to output.typeLabel,
+                            "Frecuencias DAC" to output.sampleRatesLabel,
+                            "Estado Bit-Perfect" to if (output.isDac || output.isBitPerfectSupported) "ACTIVO (Transferencia Bit a Bit Directa)" else "Mezclador Estándar",
+                            "Permiso USB Host" to if (output.hasUsbPermission) "Concedido (Acceso Directo Hardware)" else "No Requerido / Estándar",
+                        ),
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun SignalNodeCard(
+    stepNumber: String,
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    details: List<Pair<String, String>>,
+    isHighlight: Boolean = false,
+) {
+    Surface(
+        color = if (isHighlight) Gold.copy(alpha = 0.12f) else InkSoft,
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isHighlight) Gold else InkElevated,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(if (isHighlight) Gold else InkElevated),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        stepNumber,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isHighlight) Ink else Gold,
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Icon(icon, contentDescription = null, tint = Gold, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = if (isHighlight) Gold else CreamMuted)
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            details.forEach { (label, value) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 1.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(label, style = MaterialTheme.typography.labelSmall, color = CreamMuted)
+                    Text(value, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = Cream)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SignalConnectorArrow(label: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .height(12.dp)
+                .background(Gold.copy(alpha = 0.6f)),
+        )
+        Text(
+            text = "↓ $label",
+            style = MaterialTheme.typography.labelSmall,
+            color = Gold,
+            fontWeight = FontWeight.Bold,
+        )
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .height(12.dp)
+                .background(Gold.copy(alpha = 0.6f)),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AlbumDetailSheet(
+    album: AlbumGroup,
+    currentUri: android.net.Uri?,
+    isPlaying: Boolean,
+    onTrackClick: (Int) -> Unit,
+    onInspectClick: (Track) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Ink,
+        contentColor = Cream,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(InkSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Rounded.Album, contentDescription = null, tint = CreamMuted, modifier = Modifier.size(36.dp))
+                    val art = album.artworkUri
+                    if (art != null) {
+                        AsyncImage(model = art, contentDescription = album.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    }
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(album.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Cream)
+                    Text(album.artist, style = MaterialTheme.typography.bodyLarge, color = CreamMuted)
+                    Text(
+                        "${album.tracks.size} canciones${if (album.year > 0) " · ${album.year}" else ""}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Gold,
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            LazyColumn(
+                modifier = Modifier.height(360.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                itemsIndexed(album.tracks) { index, track ->
+                    TrackRow(
+                        track = track,
+                        selected = track.uri == currentUri,
+                        isPlaying = isPlaying && track.uri == currentUri,
+                        onClick = { onTrackClick(index) },
+                        onInspect = { onInspectClick(track) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ArtistDetailSheet(
+    artist: ArtistGroup,
+    currentUri: android.net.Uri?,
+    isPlaying: Boolean,
+    onTrackClick: (Int) -> Unit,
+    onInspectClick: (Track) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Ink,
+        contentColor = Cream,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(InkSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Rounded.Person, contentDescription = null, tint = Gold, modifier = Modifier.size(32.dp))
+                }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(artist.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Cream)
+                    Text("${artist.albumCount} álbumes · ${artist.trackCount} canciones", style = MaterialTheme.typography.bodyMedium, color = CreamMuted)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            LazyColumn(
+                modifier = Modifier.height(380.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                itemsIndexed(artist.tracks) { index, track ->
+                    TrackRow(
+                        track = track,
+                        selected = track.uri == currentUri,
+                        isPlaying = isPlaying && track.uri == currentUri,
+                        onClick = { onTrackClick(index) },
+                        onInspect = { onInspectClick(track) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun MetadataInspectorDialog(
+    track: Track,
+    output: OutputDevice,
+    analysis: com.kukosin.app.data.analysis.AudioAnalysis?,
+    onDismiss: () -> Unit,
+    onOpenSignalPath: () -> Unit,
+    onAnalyzeClick: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .fillMaxHeight(0.82f)
+                .clip(RoundedCornerShape(24.dp)),
+            color = Ink,
+            tonalElevation = 8.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Info, contentDescription = null, tint = Gold, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Info y Autenticidad",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Gold,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = CreamMuted)
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    item {
+                        AnalysisPanel(
+                            analysis = analysis?.takeIf { it.uri == track.uri },
+                            scrollable = false,
+                            onAnalyzeClick = onAnalyzeClick,
+                        )
+                    }
+                    item {
+                        Spacer(Modifier.height(4.dp))
+                        MetaGroupHeader("Etiquetas del Archivo")
+                        MetaItem("Título", track.title)
+                        MetaItem("Artista", track.effectiveArtist)
+                        MetaItem("Álbum", track.album)
+                        if (track.albumArtist.isNotBlank()) MetaItem("Artista del Álbum", track.albumArtist)
+                        if (track.genre.isNotBlank()) MetaItem("Género", track.genre)
+                        if (track.composer.isNotBlank()) MetaItem("Compositor", track.composer)
+                        if (track.trackNumber > 0) MetaItem("Número de Pista", track.trackNumber.toString())
+                        if (track.discNumber > 0) MetaItem("Número de Disco", track.discNumber.toString())
+                        if (track.year > 0) MetaItem("Año / Fecha", track.year.toString())
+                        if (track.comment.isNotBlank()) MetaItem("Comentario", track.comment)
+                    }
+                    item {
+                        Spacer(Modifier.height(4.dp))
+                        MetaGroupHeader("Especificaciones de Audio")
+                        MetaItem("Codec / Formato", track.codecLabel)
+                        MetaItem("Tipo Mime", track.mimeType)
+                        MetaItem("Frecuencia de Muestreo", if (track.sampleRate > 0) "${track.sampleRate} Hz" else "N/A")
+                        MetaItem("Profundidad de Bits", if (track.bitDepth > 0) "${track.bitDepth}-bit" else "N/A")
+                        MetaItem("Canales", if (track.channels > 0) "${track.channels}" else "Estéreo")
+                        MetaItem("Tasa de Bits", if (track.bitrate > 0) "${track.bitrate / 1000} kbps" else "Variable / Lossless")
+                        MetaItem("Duración", formatTime(track.durationMs))
+                    }
+                    item {
+                        Spacer(Modifier.height(4.dp))
+                        MetaGroupHeader("Archivo e Integración Bit-Perfect")
+                        MetaItem("Ruta de Archivo", track.filePath.ifBlank { track.uri.toString() })
+                        MetaItem("Tamaño de Archivo", track.fileSizeLabel)
+                        MetaItem("Salida Activa", "${output.typeLabel} (${output.name})", onClick = onOpenSignalPath)
+                        MetaItem("Estado Bit-Perfect", if (output.isBitPerfectSupported) "Soportado / Activo" else "Mezclador Estándar", onClick = onOpenSignalPath)
+                        MetaItem("Frecuencias Soportadas DAC", output.sampleRatesLabel, onClick = onOpenSignalPath)
+                    }
+                    item {
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FullScreenSettingsScreen(
+    output: OutputDevice,
+    autoAnalyze: Boolean,
+    onToggleAutoAnalyze: () -> Unit,
+    audioDriver: String,
+    onSelectAudioDriver: (String) -> Unit,
+    targetSampleRate: String,
+    onSelectTargetSampleRate: (String) -> Unit,
+    targetPcmFormat: String,
+    onSelectTargetPcmFormat: (String) -> Unit,
+    bitPerfectEnabled: Boolean,
+    onToggleBitPerfect: () -> Unit,
+    onRescan: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Ink,
+            contentColor = Cream,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás", tint = Gold, modifier = Modifier.size(28.dp))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text("Configuración de Audio & HiFi", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Gold)
+                        Text("Kukosin High-Resolution Audio Engine", style = MaterialTheme.typography.labelSmall, color = CreamMuted)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    item {
+                        Text("Controlador de Salida Audio (Audio Driver)", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Motor / API de Salida de Sonido", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Selecciona la API nativa de Android para entregar las muestras de audio al hardware.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CreamMuted,
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                val drivers = listOf("AAudio", "AudioTrack", "Hi-Res Direct", "OpenSL ES")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    drivers.forEach { driver ->
+                                        val selected = audioDriver == driver
+                                        Surface(
+                                            color = if (selected) Gold else Ink,
+                                            shape = RoundedCornerShape(10.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, Gold),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable { onSelectAudioDriver(driver) },
+                                        ) {
+                                            Text(
+                                                text = driver,
+                                                color = if (selected) Ink else Gold,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(vertical = 8.dp),
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Tasa de Muestreo Objetivo (Sample Rate)", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Frecuencia de Trabajo ($targetSampleRate)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Dependiendo del controlador seleccionado, puedes forzar una tasa fija o seguir el archivo original.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CreamMuted,
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                val sampleRates = listOf("Auto (Bit-Perfect)", "44.1 kHz", "48.0 kHz", "88.2 kHz", "96.0 kHz", "192.0 kHz", "384.0 kHz")
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(sampleRates) { rate ->
+                                        val selected = targetSampleRate == rate
+                                        Surface(
+                                            color = if (selected) Gold else Ink,
+                                            shape = RoundedCornerShape(10.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, Gold),
+                                            modifier = Modifier.clickable { onSelectTargetSampleRate(rate) },
+                                        ) {
+                                            Text(
+                                                text = rate,
+                                                color = if (selected) Ink else Gold,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Frecuencias Permitidas por el Hardware DAC", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(output.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Gold)
+                                Spacer(Modifier.height(4.dp))
+                                Text("Frecuencias de muestreo reportadas por la salida activa:", style = MaterialTheme.typography.bodySmall, color = CreamMuted)
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = output.sampleRatesLabel.ifBlank { "44.1 kHz, 48.0 kHz, 88.2 kHz, 96.0 kHz, 176.4 kHz, 192.0 kHz, 384.0 kHz" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Cream,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Formato de Muestreo PCM & Profundidad", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Codificación PCM ($targetPcmFormat)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                Spacer(Modifier.height(10.dp))
+                                val pcmFormats = listOf("PCM Float 32-bit", "PCM Int 24-bit", "PCM Int 16-bit", "Auto")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    pcmFormats.forEach { fmt ->
+                                        val selected = targetPcmFormat == fmt
+                                        Surface(
+                                            color = if (selected) Gold else Ink,
+                                            shape = RoundedCornerShape(10.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, Gold),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable { onSelectTargetPcmFormat(fmt) },
+                                        ) {
+                                            Text(
+                                                text = fmt,
+                                                color = if (selected) Ink else Gold,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(vertical = 8.dp),
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Modo Bit-Perfect (Passthrough Directo)", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Activar Direct Hardware Access", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "Garantiza salida exacta bit por bit sin procesamiento ni alteración del mezclador Android.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = CreamMuted,
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Switch(
+                                    checked = bitPerfectEnabled,
+                                    onCheckedChange = { onToggleBitPerfect() },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Ink,
+                                        checkedTrackColor = Gold,
+                                        uncheckedThumbColor = CreamMuted,
+                                        uncheckedTrackColor = InkSoft,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Análisis Espectral y Autenticidad", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Análisis Espectral Automático", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "Decodificar muestras PCM y calcular espectro FFT de 4096 puntos automáticamente al reproducir pistas.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = CreamMuted,
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Switch(
+                                    checked = autoAnalyze,
+                                    onCheckedChange = { onToggleAutoAnalyze() },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Ink,
+                                        checkedTrackColor = Gold,
+                                        uncheckedThumbColor = CreamMuted,
+                                        uncheckedTrackColor = InkSoft,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Biblioteca y Deduplicación", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Deduplicación de Pistas Activa", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Filtrado inteligente por ruta de archivo para evitar canciones duplicadas entre MediaStore Audio y MediaStore Files.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CreamMuted,
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                Button(
+                                    onClick = {
+                                        onRescan()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Rescanear Biblioteca Completa", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Acerca de Kukosin Player", style = MaterialTheme.typography.labelLarge, color = Gold, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            color = InkSoft,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Kukosin HiFi Audio Player v1.0.0", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cream)
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Motor de reproducción lossless impulsado por Android Jetpack Media3, decodificadores nativos FFmpeg, NextLib MediaInfo y análisis de espectro FFT.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CreamMuted,
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Spacer(Modifier.height(16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetaGroupHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = Gold,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(vertical = 4.dp),
+    )
+}
+
+@Composable
+private fun MetaItem(label: String, value: String, onClick: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = CreamMuted, modifier = Modifier.weight(0.4f))
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = if (onClick != null) Gold else Cream, fontWeight = FontWeight.Medium, modifier = Modifier.weight(0.6f))
+    }
+}
+
+private fun audioPermissions(): Array<String> {
+    val permissions = mutableListOf<String>()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissions += Manifest.permission.READ_MEDIA_AUDIO
+        permissions += Manifest.permission.POST_NOTIFICATIONS
+    } else {
+        permissions += Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+    return permissions.toTypedArray()
+}
+
+private fun hasAudioPermission(context: android.content.Context): Boolean {
+    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_AUDIO
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+    return ContextCompat.checkSelfPermission(context, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED
+}
